@@ -8,3 +8,4 @@ numpy
 pytz
 seaborn
 xgboost
+cryptopanic_API_Wrapper glassnode yfinance nltk xgboost
