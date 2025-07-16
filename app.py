@@ -65,7 +65,13 @@ def plot_returns(df):
 st.title("📊 Crypto Trend Predictor")
 st.markdown("Predicts next 24h trend using technical indicators.")
 
-coins = {"Bitcoin": "bitcoin", "Ethereum": "ethereum", "Dogecoin": "dogecoin"}
+coins = {
+    "Bitcoin": "bitcoin",
+    "Ethereum": "ethereum",
+    "Dogecoin": "dogecoin",
+    "XRP": "ripple"
+}
+
 coin_name = st.selectbox("Choose Crypto", list(coins.keys()))
 run = st.button("Run Prediction")
 
