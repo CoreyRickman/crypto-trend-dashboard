@@ -4,7 +4,6 @@ import numpy as np
 import requests
 import ta
 import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     accuracy_score, confusion_matrix, classification_report,
@@ -13,10 +12,10 @@ from sklearn.metrics import (
 import seaborn as sns
 import pytz
 from datetime import datetime
+import xgboost as xgb
 
 st.set_page_config(page_title="Crypto Predictor", layout="centered")
 
-# --- Functions ---
 @st.cache_data
 def fetch_data(coin):
     url = f"https://api.coingecko.com/api/v3/coins/{coin}/market_chart"
@@ -36,15 +35,27 @@ def add_features(df):
     df["BB_lower"] = bb.bollinger_lband()
     df["EMA_10"] = ta.trend.EMAIndicator(close=df["price"], window=10).ema_indicator()
     df["momentum"] = ta.momentum.ROCIndicator(close=df["price"]).roc()
+    df["rolling_vol"] = df["price"].pct_change().rolling(window=5).std()
     df["target"] = (df["price"].shift(-1) > df["price"]).astype(int)
     return df.dropna()
 
 def train_model(df):
-    features = ["SMA_10", "RSI", "MACD", "BB_upper", "BB_lower", "EMA_10", "momentum"]
+    features = ["SMA_10", "RSI", "MACD", "BB_upper", "BB_lower", "EMA_10", "momentum", "rolling_vol"]
     X = df[features]
     y = df["target"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False, test_size=0.2)
-    model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+
+    model = xgb.XGBClassifier(
+        n_estimators=300,
+        max_depth=4,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        use_label_encoder=False,
+        eval_metric="logloss",
+        random_state=42
+    )
+
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
     probs = model.predict_proba(X_test)[:, 1]
@@ -77,7 +88,7 @@ def plot_returns(df):
 
 # --- UI ---
 st.title("📊 Crypto Trend Predictor")
-st.markdown("Predicts next 24h trend using technical indicators.")
+st.markdown("Predicts next 24h trend using XGBoost and technical indicators.")
 
 coins = {
     "Bitcoin": "bitcoin",
